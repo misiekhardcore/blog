@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -7,7 +8,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { from, Observable } from 'rxjs';
+import { catchError, from, map, Observable } from 'rxjs';
 import { User } from './entities/user.interface';
 import { UserService } from './user.service';
 
@@ -17,7 +18,19 @@ export class UserController {
 
   @Post()
   create(@Body() user: User): Observable<User> {
-    return this.userService.create(user);
+    return this.userService.create(user).pipe(
+      map((user: User) => user),
+      catchError((err) => {
+        throw new BadRequestException(err.message);
+      }),
+    );
+  }
+
+  @Post('login')
+  login(@Body() user: User): Observable<{ access_token: string }> {
+    return this.userService
+      .login(user)
+      .pipe(map((jwt: string) => ({ access_token: jwt })));
   }
 
   @Get(':id')
