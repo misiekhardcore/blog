@@ -4,7 +4,7 @@ import { catchError, from, map, Observable, switchMap, throwError } from 'rxjs';
 import { AuthService } from 'src/auth/auth.service';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
-import { User } from './entities/user.interface';
+import { User, UserRole } from './entities/user.interface';
 
 @Injectable()
 export class UserService {
@@ -58,7 +58,12 @@ export class UserService {
   updateOne(id: number, user: User): Observable<any> {
     delete user.email;
     delete user.password;
+    delete user.role;
     return from(this.userRepo.update(id, user));
+  }
+
+  updateRole(id: number, role: UserRole): Observable<any> {
+    return from(this.userRepo.update(id, { role }));
   }
 
   login(user: User): Observable<string> {
