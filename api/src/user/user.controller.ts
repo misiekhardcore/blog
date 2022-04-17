@@ -7,8 +7,10 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
+import { Pagination } from 'nestjs-typeorm-paginate';
 import { catchError, from, map, Observable } from 'rxjs';
 import { hasRoles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
@@ -43,8 +45,12 @@ export class UserController {
   }
 
   @Get()
-  findAll(): Observable<User[]> {
-    return from(this.userService.findAll());
+  findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ): Observable<Pagination<User>> {
+    return this.userService.paginate({ limit: +limit, page: +page });
+    // return from(this.userService.findAll());
   }
 
   @Delete(':id')
