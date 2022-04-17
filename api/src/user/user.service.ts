@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import {
+  IPaginationOptions,
+  paginate,
+  Pagination,
+} from 'nestjs-typeorm-paginate';
 import { catchError, from, map, Observable, switchMap, throwError } from 'rxjs';
 import { AuthService } from 'src/auth/auth.service';
 import { Repository } from 'typeorm';
@@ -17,7 +22,11 @@ export class UserService {
     return this.authService.hashPassword(user.password).pipe(
       switchMap((passwordHash: string) => {
         return from(
-          this.userRepo.save({ ...user, password: passwordHash }),
+          this.userRepo.save({
+            ...user,
+            password: passwordHash,
+            role: UserRole.USER,
+          }),
         ).pipe(
           map((user: User) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -97,5 +106,15 @@ export class UserService {
 
   findByEmail(email: string): Observable<User> {
     return from(this.userRepo.findOne({ where: { email } }));
+  }
+
+  paginate(options: IPaginationOptions): Observable<Pagination<User>> {
+    return from(paginate<User>(this.userRepo, options)).pipe(
+      map((users: Pagination<User>) => {
+        users.items.forEach((u) => delete u.password);
+        return users;
+      }),
+      catchError((err) => throwError(() => new Error(err))),
+    );
   }
 }
