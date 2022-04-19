@@ -48,8 +48,12 @@ export class UserController {
   findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 10,
+    @Query('username') username?: string,
   ): Observable<Pagination<User>> {
-    return this.userService.paginate({ limit: +limit, page: +page });
+    return this.userService.paginateFilterByUsername(
+      { limit: +limit, page: +page },
+      { username },
+    );
     // return from(this.userService.findAll());
   }
 

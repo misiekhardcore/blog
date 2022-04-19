@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   IPaginationOptions,
@@ -7,7 +7,7 @@ import {
 } from 'nestjs-typeorm-paginate';
 import { catchError, from, map, Observable, switchMap, throwError } from 'rxjs';
 import { AuthService } from 'src/auth/auth.service';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { User, UserRole } from './entities/user.interface';
 
@@ -43,10 +43,13 @@ export class UserService {
     return from(this.userRepo.findOne({ where: { id } })).pipe(
       map((user: User) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, ...rest } = user;
-        return rest;
+        if (user) {
+          delete user.password;
+          return user;
+        }
+        throw new NotFoundException();
       }),
-      catchError((err) => throwError(() => new Error(err))),
+      catchError((err) => throwError(() => err)),
     );
   }
 
@@ -115,6 +118,35 @@ export class UserService {
         return users;
       }),
       catchError((err) => throwError(() => new Error(err))),
+    );
+  }
+
+  paginateFilterByUsername(
+    options: IPaginationOptions,
+    user: User,
+  ): Observable<Pagination<User>> {
+    return from(
+      this.userRepo.findAndCount({
+        skip: +options.limit * (+options.page - 1),
+        take: +options.limit,
+        order: { id: 'ASC' },
+        select: ['id', 'email', 'role', 'username', 'name'],
+        where: [{ username: Like(`%${user.username || ''}%`) }],
+      }),
+    ).pipe(
+      map(([users, total]) => {
+        const userPagina: Pagination<User> = {
+          items: users,
+          meta: {
+            currentPage: +options.page,
+            itemCount: users.length,
+            itemsPerPage: +options.limit,
+            totalItems: total,
+            totalPages: Math.ceil(total / +options.limit),
+          },
+        };
+        return userPagina;
+      }),
     );
   }
 }
