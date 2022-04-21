@@ -67,11 +67,15 @@ export class UserService {
     return from(this.userRepo.delete(id));
   }
 
-  updateOne(id: number, user: User): Observable<any> {
+  updateOne(id: number, user: User): Observable<User> {
     delete user.email;
     delete user.password;
     delete user.role;
-    return from(this.userRepo.update(id, user));
+    return this.findOne(id).pipe(
+      switchMap((userToUpdate) =>
+        this.userRepo.save({ ...userToUpdate, ...user }),
+      ),
+    );
   }
 
   updateRole(id: number, role: UserRole): Observable<any> {
@@ -130,7 +134,7 @@ export class UserService {
         skip: +options.limit * (+options.page - 1),
         take: +options.limit,
         order: { id: 'ASC' },
-        select: ['id', 'email', 'role', 'username', 'name'],
+        select: ['id', 'email', 'role', 'username', 'name', 'profileImage'],
         where: [{ username: Like(`%${user.username || ''}%`) }],
       }),
     ).pipe(
