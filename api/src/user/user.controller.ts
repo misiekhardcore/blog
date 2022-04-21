@@ -26,6 +26,7 @@ import { User, UserRole } from './entities/user.interface';
 import { UserService } from './user.service';
 import { diskStorage } from 'multer';
 import { join } from 'path';
+import { UserIsUserGuard } from 'src/auth/guards/user-is-user.guard';
 
 @Controller('users')
 export class UserController {
@@ -71,6 +72,7 @@ export class UserController {
     return from(this.userService.deleteOne(+id));
   }
 
+  @UseGuards(JwtAuthGuard, UserIsUserGuard)
   @Patch(':id')
   updateOne(@Param('id') id: string, @Body() user: User): Observable<User> {
     return from(this.userService.updateOne(+id, user));
