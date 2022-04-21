@@ -27,6 +27,9 @@ export class UserEntity extends BaseEntity implements User {
   @Column({ default: UserRole.USER, enum: UserRole, type: 'enum' })
   role: UserRole;
 
+  @Column({ nullable: true })
+  profileImage?: string;
+
   @BeforeInsert()
   emailToLowerCase() {
     this.email = this.email.toLowerCase();
